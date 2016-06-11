@@ -1,3 +1,8 @@
+The goal is a navigation device that becomes an unconcious sixth-sense, so a user can navigate as if naturally, as if already knowing their way around. This unconcious sense has apparently worked for artificial-horizons and absolute-north.
+
+See haptic-nav.txt for the plan.
+
+
 # Copyright
 
 Copyright (c)  2016 Alan Grover <awgrover@msen.com>
