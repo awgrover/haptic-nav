@@ -1,0 +1,130 @@
+Some Goals.
+The goal is a navigation device that becomes an unconcious sixth-sense, so a user can navigate as if naturally, as if already knowing their way around. This unconcious sense has apparently worked for artificial-horizons and absolute-north.
+
+I imagine a haptic-device that gives a sense of:
+* Absolute north, for a sense of orientation. Thus, you wouldn't get turned around.
+* Bearing towards home, which I imagine is a distince sense from just orientation. And I imagine is useful. This is a question to investigate. Can we include a sense of distance, perhaps using a "stereo" behavior?
+* Perhaps bearings to several points (work? favorite coffee shop)? How many are feasible? How to encode the haptic sense? Would this give a triangulation sense?
+* Way finding while biking:
+	* A sense of how "good" each direction is at an intersection. I imagine that this will give a sense of options, and opportunity to explore alternate routes based on immediate preferences & situations. For example, I prefer to avoid the main roads in Amsterdam, and bike through the "side" streets. What do I mean by "good"? Some predefine preferences like traffic-speed, or bike lane quality, or hilliness?
+	* A sense of "directness". So that a direct street ("straight") would feel different from a winding/round-about way. This seems to overlap with the above. I imagine a feeling of openness associated with a (relative) direction: to the right (where there is a street) it feels dull and solid, but left feels open and clear. How to signal this? Especially when there are 3 (or more) possible alternatives? Can a "stereo" like sense be part of this to give a distance feel? I imagine being able to feel that there is an obstacle, like a river (with limited bridges). I imagine being able to feel a sense of "fast" one way, and "slow" the other. I imagine being able to feel whether there are lots of alternatives along one way, or perhaps very restrictive alternatives along the other. How to encode various dimensions?
+	* A sense of distance to the destination.
+	* A sense of the where the route is going next. Like a leading sound or light up ahead. I imagine feeling a pull forward and to the right as the road curves, for example.
+For all these indications/signals, the goal is for the indication to become a integrated sense, rather than a concious signal. Cf. haptic-artifical-horizons. So, the encoding of the indications will probably take a lot of trial. I imagine sense of "bigness", forward, pulling back or to the side.
+	* I imagine feeling several "turns" ahead, rather than just one, in some way feeling the route. Similar to seeing the path on a map.
+* Where your friends are. Direction and distance. Can we convert that to routing? Can it become a sense? How many friends? What if they are together? How do you broadcast?
+* I imagine an overlay for Home (or other "bearings"): while you should know the absolute, there shoul be a way-finding for it, so you always know how to navigate home. "That street over there..."
+* I imagine that the way-finding changes based on your transportation mode. If you are walking, and it's a long ways, take public transit.... Bikes have a longer threshold.
+
+Research Questions etc.
+	Play with piezo...
+	What dimensions can we use to encode indications?
+		* Volume
+		* Frequency
+		* taps, pulses
+		* phantom pressure
+		* patterns moving between transducers (waves, "drag", ???)
+		* "stereo" like (widely separated transducers)
+		* lateral vs. transverse actuation (piezo-film?)
+		* heterodyning?
+		* "natural sounds" as contrasted to pure frequencies.
+		* sets of frequencies. different volumes of each? a composable language?
+	What leads to integrating the transducer as an unconcious sense?
+		* I assume constant signals become "background"
+		* "Similar" signals for ranges? Like deviation from north are all the same frequency (and perhaps spatially indicative). Or, a pure square wave along a range of frequencies to indicated direction? Or? 
+		* spatial linear, spatially circular, concentric rings, cross,
+		* psuedo pressure (assymetric sawtooth?)
+		* Earlobe clips for stereo? (not audible)
+		* location on the body. Right wrist, left ankle, waist, back...
+		* Build it into a cap? The headband is one dimension. etc.
+	Does the feeling of alternative routes help defuse the abdication of responsibility that leads people to follow their GPS into a lake? If you can feel the possibility of other directions, will you be more willing to evaluate the "main" path and go around some dubious path?
+	Does the user develop a sense of way finding that is more anticipatory then just one-turn-ahead?
+	Can you develop a useful position sense from triangulation? What kind of sense?
+	
+	Technology
+		I assume the "north" on the n-axis/gps sensors are stable & accurate enough.
+		How fast does the GPS need to update for the various "senses"?
+		How much of this can I do with OSRM?
+		What senses can be done "offline"?
+			Should we load a corridor of "re-routing"? For when you make a wrong turn?
+		What actually happens when someone is going somewhere? Do they stick to the route? Do they make detours? How do you resume?
+		Can we interface with cheap smart phones (android) to provide the remote-routing calculations? What is the real-timey'ness?
+		How much memory do routes & other info take? Sounds?
+		Do we need external storage (SD, etc.)? Is it fast enough?
+		
+1.0
+* Abs North
+* Bearing Home. Distance?
+* piezo disks (piezo-film if I can get it).
+* arduino + lipo
+
+Stories.
+	Never get turned around, by having a sixth sense of North. The haptic indication should become subconcious, so it requires no attention, but just becomes a "sense."
+		A compass for the north data, should be hooked up to the arduino. I should have brought/got a neo-pixel ring for development and debugging to see the output.
+			- https://www.sparkfun.com/products/13303
+				3axis accel, 3axis mag, I2C, interrupt pins, 3V! (<4.8!!), temp
+				"OV" = gnd
+				VDD = 3v
+				uses spi, w/included pull-up
+				motion detect interrupt
+				i2c: SDA-SDA, SCL-SCL
+				
+			For portable use, a long enough lasting battery (lipo setup). Will need some kind of carrier (bag?)? Do I have the wire and connectors to do this?
+			Build that feature without filtering/averaging, so we can Collect data about the questions. How can we collect data nicely? Use the static space? So, also add a button.
+			And, then, in that case, use the GPS to grab a lat/long for logging.
+				How much noise? Do we have to "average"?
+				How stable?
+				How do buildings and bridges affect it?
+				How does being inside affect it?
+				Is it fast enough when turning, does it catch up fast enough to avoid confusion? Can the behavior make "lag" ok?
+				Should a gyro be used with it as a check on turning to filter out "iron"?
+				How long does it take for the indication to drop below concious?
+			End up with a reliable North signal that can be used for a haptic-indication.
+		A haptic indicator for North, or rather, for absolute direction.
+			Research extant/prior haptic indicators (e.g. artificial horizon & abs north).
+			Experiment with the piezo's.
+			Design & build a protoype indicator for use for North.
+			Try it out, share it, document how it works and ideas for improving it.
+			End up with a haptic indicator that holds together well enough, and is robust enough for day-long trials, and which seems likely to give the "sense".
+			Try to use it enough to develop the "sense".
+		Bearing to Home. Add a 2nd sense of the bearing to home.
+			A button to "set" home.
+			Use the GPS for the lat/long. Math for bearing from "here" to "home".
+				Is the GPS fast enough?
+				How are we doing with compute time? Add a "load" indicator....
+				The neo-ring would be useful here again!
+				What is the resolution, accuracy, repeatability?
+				Set several locations, in the open, in alleys, etc. Document the situations Again, using the "logging" feature.
+			- GPS-13740 https://www.sparkfun.com/products/13740
+			The haptic indication that is distinct from AbsNorth.
+				as above, design...
+				Test, share...
+				Does it work?
+				etc.
+			Can we add a second dimension to this sense: distance to home?
+				Log scale? Quantized (next continent over).
+				or is it relative to the transportation mode in some way?
+			Do we need some indication of "you are there?"
+		Did we end up with a barely usable device that develops a sense of orientation and homing? Does it work when walking, biking, ....?
+		What is the experience of having an absolute sense of direction? And homing?
+			
+		
+	
+Research questions & results. & prior work?
+* Piezo-film behavior
+* piezo-disk behavior
+* prior work on the piezo indication
+
+		
+		
+I would like that "posted".
+
+Gyro Feature.
+This feature is inspired by sailing with a blind person. They have a very difficult time detecting slow turns (drifing off course) on the water. The absolute-north might help, but it needs to indicate small deviations with a constant rate of slow turning. So, it must magnify the sense of "turning" for small angular speeds. This seems like an extra sense.
+
+Windex Feature?
+On the one hand, it is desirable to hold a course which is the gyro/direction-feature. On the other hand, it is very often desirable to hold a tack. Holding a tack may be amenable to only feeling the wind, which is a sense and skill that new sailors are typically poor at. To gain experience with sensing the wind direction, new sailors check with windex (wind-vane) and tell-tales. In light wind, even experience sailors check the windex/tell-tales. So, how can a blind person check the tell-tales/windex (without instrumenting them)?
+
+Also, if the wind is strong enough, it seems that a blind person can learn the sound-clues of a poorly trimmed sail (luffing), in combination with the heel/etc. of the boat to gauge trim/tack. These senses don't seem to need technological assist.
+
+Interestingly, the blind person I sailed with was able to do quite accurate and consistent 90 degree turns. So, I assume large/fast angular changes are easy to detect. Though, perhaps long turns, 180, or 270/360 may be harder as the ear's systems accomodate to a turn rate, etc.
