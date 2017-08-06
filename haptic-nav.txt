@@ -107,7 +107,7 @@ Stories.
 			Do we need some indication of "you are there?"
 		Did we end up with a barely usable device that develops a sense of orientation and homing? Does it work when walking, biking, ....?
 		What is the experience of having an absolute sense of direction? And homing?
-			
+	Convert to wiki pages for stories?			
 		
 	
 Research questions & results. & prior work?

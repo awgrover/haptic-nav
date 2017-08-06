@@ -2,6 +2,15 @@ The goal is a navigation device that becomes an unconcious sixth-sense, so a use
 
 See haptic-nav.txt for the plan.
 
+# Requirements
+
+## Fritzing files (.fz)
+
+I used Fritzing 0.9.3 (for the online parts, specifically the sparkfun parts).
+
+# Build Instructions
+
+See each *_build_instruction.md
 
 # Copyright
 
@@ -25,3 +34,4 @@ Some files can't contain a copyright notice, and are copyrighted as follows:
     or any later version published by the Free Software Foundation;
     with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
     Texts.
+
