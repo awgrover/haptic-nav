@@ -20,10 +20,11 @@
 
 #include <avr/interrupt.h> // Load AVR timer interrupt macros
 #include <avr/pgmspace.h> // for PROGMEM
+#include "every.h"
 
 const int MYCLOCK_M=16; // set this. Uno 16. nano 16.
 const int WANT_TIMER_M = 2; // want 2mhz
-const int VOLUME = 4; // actually, the volume divider. 1/nth as loud. needs to scale with the frequency though
+const int VOLUME = 20; // actually, the volume divider. 1/nth as loud. needs to scale with the frequency though
 
 /******** Lookup table ********/
 #define LENGTH  256  // The length of the waveform lookup table
@@ -80,31 +81,48 @@ void setup() {
   TCCR2B = (1 << CS21); // want 2mhz, so prescalar to divide by 8. how fast TCNT2 is updated
   TIMSK2 = (1 << OCIE2A); // Set timer to call ISR when TCNT2 = OCRA2
   OCR2A = 64;  // Sample every 32 tics. 2.000.000 / (freq * 256) = OCR2A. so, 256 samples -> frequency
+    // freq = 2000000 / ( OCR2A * 256 )
+  OCR2A = 100;
   sei(); // // Enable interrupts to generate waveform!
 
   digitalWrite(LED_BUILTIN, HIGH);
+  Serial.begin(115200);
 
 }
 
 void loop() {  // Nothing to do!
   static uint8_t x=10;
-  static int HILO = HIGH;
+  static short d_phase = 0;
+
+  get_now();
+
+ // shift phase from about -20 to about +20
+  every_millis(100, 
+    d_phase = (d_phase + 1) % 40; /* range 40, +- */
+    r_index = l_index + (d_phase - 20);
+    );
+
+  every_millis(250,
+    Serial.print("OCR2A ");Serial.print(OCR2A);Serial.print(" Freq ");Serial.print( 2000000L / ( OCR2A * 256L ) );
+    Serial.print(" D "); Serial.print(r_index - l_index);
+    Serial.println();
+    )
 
   // change sample rate to change frequency, just a sweep
+  /*
   OCR2A = x--;
   if (x > 150U) x=80;
   delay(8);
+  */
 
   // blink LED "pulse"
-  HILO = millis()/200 % 2;
-  digitalWrite(LED_BUILTIN, HILO);
+  hilo_every_millis(200, digitalWrite(LED_BUILTIN, HILO) );
 }
 
 ISR(TIMER2_COMPA_vect) { // Call when TCNT2 = OCRA2
   // tuned for approx 16mhz
-  static byte l_index=0; // auto wrap around? seems crude. not unsigned?
-  OCR1AL = pgm_read_byte(&ref[l_index]); // pin 9 // wave[l_index] / VOLUME; // just added several ticks to this routine
-  OCR1BL = wave[r_index]; // apparently pin 10 pwm
+  OCR1AL = wave[l_index] / VOLUME; // pgm_read_byte(&ref[l_index]); // pin 9 // wave[l_index] / VOLUME; // just added several ticks to this routine
+  OCR1BL = wave[r_index] / VOLUME; // apparently pin 10 pwm
   l_index += 1;
   r_index += 1;
   asm("NOP;NOP"); // estimate, FIXME: should self-calibrate
