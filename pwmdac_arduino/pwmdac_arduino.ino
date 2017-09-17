@@ -48,7 +48,11 @@ const char ref[256] PROGMEM = {     128,131,134,137,140,143,146,149,152,155,158,
 79,  82, 85, 88, 91, 94, 97,100,103,106,109,112,115,118,121,124};
 #pragma GCC diagnostic warning "-Wnarrowing"
 
-byte wave[LENGTH];
+byte wave[LENGTH]; // copy from epprom to ram, because reading from ram is about 4 times faster
+
+// where we are in the sine wave
+// unsigned, so let it do "mod" wraparound automatically
+byte l_index, r_index; // visible for main loop modification
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -57,6 +61,7 @@ void setup() {
   for (int i=0; i<LENGTH; i++) {
     wave[i] = pgm_read_byte(&ref[i]); // Don't need to copy. but, PROGMEM is ~5(?)/read vs ~2/read for ram
   }
+  l_index = r_index = 0;
   
   /******** Set timer1 for 8-bit fast PWM output ********/
   pinMode(9, OUTPUT);
@@ -77,6 +82,7 @@ void setup() {
   OCR2A = 64;  // Sample every 32 tics. 2.000.000 / (freq * 256) = OCR2A. so, 256 samples -> frequency
   sei(); // // Enable interrupts to generate waveform!
 
+  digitalWrite(LED_BUILTIN, HIGH);
 
 }
 
@@ -84,22 +90,23 @@ void loop() {  // Nothing to do!
   static uint8_t x=10;
   static int HILO = HIGH;
 
+  // change sample rate to change frequency, just a sweep
   OCR2A = x--;
   if (x > 150U) x=80;
+  delay(8);
 
+  // blink LED "pulse"
   HILO = millis()/200 % 2;
   digitalWrite(LED_BUILTIN, HILO);
-
-  // delay( 8 + (80 - x) / 40 * 10 );
-  delay(8);
 }
 
 ISR(TIMER2_COMPA_vect) { // Call when TCNT2 = OCRA2
   // tuned for approx 16mhz
-  static byte index=0; // auto wrap around? seems crude. not unsigned?
-  OCR1AL = pgm_read_byte(&ref[index]); // wave[index] / VOLUME; // just added several ticks to this routine
-  OCR1BL = wave[index]; // apparently pin 10 pwm
-  index += 1;
+  static byte l_index=0; // auto wrap around? seems crude. not unsigned?
+  OCR1AL = pgm_read_byte(&ref[l_index]); // pin 9 // wave[l_index] / VOLUME; // just added several ticks to this routine
+  OCR1BL = wave[r_index]; // apparently pin 10 pwm
+  l_index += 1;
+  r_index += 1;
   asm("NOP;NOP"); // estimate, FIXME: should self-calibrate
   TCNT2=6; //spent in ISR
 }
