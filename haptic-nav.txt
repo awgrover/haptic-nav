@@ -1,3 +1,5 @@
+of new sensorimotor contingencies
+
 Some Goals.
 The goal is a navigation device that becomes an unconcious sixth-sense, so a user can navigate as if naturally, as if already knowing their way around. This unconcious sense has apparently worked for artificial-horizons and absolute-north.
 
@@ -52,6 +54,17 @@ Research Questions etc.
 		How much memory do routes & other info take? Sounds?
 		Do we need external storage (SD, etc.)? Is it fast enough?
 		
+0.1 haptic test
+# drv2667 soldered breakout (2)
+* attempt to wire up as per "circuit" notes from discretes on breadboard
+YIKES. just buy premade breakout from tindie?
+Order #89091 Confirmation
+* order missing parts
+* get it to vibrate
+* play with a couple of modes
+* write more library
+* add second? using n2222 as SDA switch? should work
+ 		
 1.0
 * Abs North
 * Bearing Home. Distance?
@@ -129,6 +142,154 @@ Also, if the wind is strong enough, it seems that a blind person can learn the s
 
 Interestingly, the blind person I sailed with was able to do quite accurate and consistent 90 degree turns. So, I assume large/fast angular changes are easy to detect. Though, perhaps long turns, 180, or 270/360 may be harder as the ear's systems accomodate to a turn rate, etc.
 
+Touch
+	e 5–1000Hz. http://www.nime.org/proceedings/2015/nime2015_118.pdf
+	Multi-point vibrotactile feedback for an expressive musical interface
+	Stefano Papetti, Sébastien Schiesser, Martin Frohlich
+
+drv2667
+2ms wakeup
+"analog" pwm
+	can use analog w/i2c too
+i2c
+	see 7.5.4
+	more docs; http://www.ti.com/product/drv2667/technicaldocuments
+	One slave Address. 0x59
+		will need i2c multiplexer...
+		https://www.tindie.com/products/Fyberlabs/piezo-haptic-flex-module/#tab-product-reviews
+		is it possible to use a shift-register as a "gate" in an i2c bus?
+		use a cmos/switch 4066B on SDA, share clock
+		https://learn.adafruit.com/adafruit-tca9548a-1-to-8-i2c-multiplexer-breakout/overview
+		
+	standby (lowest power)
+	waveform memory 2k?
+	sythesizer
+	FIFO for waveform: R[0x0B]
+		100 byte
+		8kHz sampel rate, signed bytes!
+		12.5ms per 100/byte
+		80 bytes is about 100 hz
+		should 0-0 value
+		1st byte->r[0x0b], 2ms wait, then goes
+		use multi-byte write by preference (not auto increment)
+		(when to do next?)
+			can test for full/not-full
+		2kram can be used: 250ms waveform, multiple entries allowed
+			8 bit address
+			8 pages, page register r[0xff]
+				must use "single-byte" write to 0xFF
+				as if control registers
+				 Incremental Multiple-Byte, < 0xFF to write to ram[0xff]
+				 auto increments
+			page 0 is registers
+			see 7.5.3.2
+	1ms after power-on
+	8.3.1 for sequence
+	#32
+	[0x01] chip id bits differenctiate 2660/2667
+	lib: https://github.com/yurikleb/DRV2667
+		almost nothing there
+		https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/input/misc/drv2667.c
+		
+still need circuit
+	boost voltage, current-limit: Rext
+	see notes 7.3.9/10, 7.4.6, 7.5.1, 7.5.2, 8.1, 8.2.2
+	see http://www.ti.com/lit/an/sloa198/sloa198.pdf
+	recommends 660-4.7kOhm pullups SDA/SCL
+	Vdd is ard regulated 5 (Vcc)
+* continous operation is not recommended!
+* if DAC not at mid-scale (00), auto rampdown, ignores fifo
+* probably want max "amplifier gain" (1,1)=100vp2p? (0,1)=50vp2p #7.3.8
+	match the external VBST->r/div->FB
+
+For BNO055, see https://hackaday.com/2017/06/22/amazing-motion-capture-of-bendy-things/#more-250012
+
+----
+Using Fyber Lab Piezo Haptic Flex Module
+https://www.tindie.com/products/Fyberlabs/piezo-haptic-flex-module/
+* based on DRV2667
+    http://www.ti.com/lit/ds/symlink/drv2667.pdf
+* I2C, Arduino using the Wire library.
+* the three jumper pads: join them all together to enable pullups on the i2c lines
+* cf. page 32 and onward on the TI DRV2667 datasheet. 
+* wire
+Ard Analog Pin 4 > SDA
+Ard Analog Pin 5 > SCL
++5V > VDD (3..5.5V)
+GND > GND
+* lib: https://github.com/yurikleb/DRV2667
+* Drive Voltage, aka Vbst (boost)
+    want 100V
+    so see table 7.5.1
+    ? what is current setting?
+    
+***
+* wire up i2c & piezo
+* run sample code for simple buzz
+    0x15 can barely feel as vibration
+    * ? gain? 200V
+        register 0x01, bits [0,1] = 0b11 == 100V
+    180 is a nice tone, but weak
+    * upping the gain helped. not great
+    * freq sweep?
+        24..28 is strong
+            25/26 is best
+    * 7.5.3.2 is format/desc of waveform
+    ** Conclusion
+        The "MEAS" piezo-film at 100V is barely detectable,
+        only with finger tips at 187.5Hz (f=24)
+        Is audible (barely) at higher freq (1400Hz, f=180)
+        No other body parts seem to feel it
+* test the samsung actuators
+    PHA(H)3538832wx
+        samsung doesn't make them anymore, sad
+        
+        close: http://www.mpluskr.com/?page_id=202
+            smaller?
+        maybe http://www.aactechnologies.com/category/46
+        maybe? KEMET Part Number: AE0203D04DF
+            
+    230hz?
+    24v or 100V might break at 40v!    
+    *24v  f=27
+    10..50
+    a kick is possible...
+* some simple gps pt -> buzz...
+    * gps loc
+        https://cdn.sparkfun.com/datasheets/GPS/GP-20U7.pdf
+        lib: http://arduiniana.org/libraries/tinygps/
+            newer: http://arduiniana.org/libraries/tinygpsplus/
+        wiring
+            2/3 (for software serial)
+            3v -> red
+            gnd -> black
+            2 (rx) -> white
+            
+    * gps course
+        display
+        the delta course-dest is the ping-pong...
+            ping,delay,pong
+            hard ping?
+                exactly 1 cycle?
+                * 2-3 cycle
+    * had a hard time getting initial lock indoors
+    * need to read data better, losing chars
+        read continously? I guess
+        interrupt...
+        
+* imu was easy for "orientation"
+    BNO055 breakout, i2c
+    switch to
+        https://github.com/adafruit/Adafruit_GPS
+        interrupt?
+    https://www.adafruit.com/product/2472
+    https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/pinouts
+    get_event, .orintation.x
+    * wait for at least mag cal to be 2|3
+    And manually pitch/rot/yaw
+
+27 7.8125 = freq 210 mill = .21
+
 
 Copyright (c)  2016 Alan Grover <awgrover@msen.com>
 Permission is granted to copy, distribute and/or modify this document
@@ -136,5 +297,6 @@ under the terms of the GNU Free Documentation License, Version 1.3
 or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included with this project as GFDL_LICENSE.md.
+
 
 

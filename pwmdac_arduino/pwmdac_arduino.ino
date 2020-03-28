@@ -90,7 +90,7 @@ void setup() {
 
 }
 
-void loop() {  // Nothing to do!
+void loop() {
   static uint8_t x=10;
   static short d_phase = 0;
 
