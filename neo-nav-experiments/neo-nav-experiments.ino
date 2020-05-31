@@ -9,6 +9,7 @@
   Far, there, AT
 
 */
+   
 #include <Streaming.h>
 #include <array_size.h>
 #include "fmap.h"
@@ -28,37 +29,10 @@ Adafruit_NeoPixel control_neo(ControlPixCount, 5, NEO_RGB + NEO_KHZ800);
 #include "mma.h"
 #include "pot.h"
 
-
-class NavIndicatorV1 {
-
-    /*
-      3 modes
-        Far (>1 turn)
-        Near 1 turn
-        Here no turns (may need far if long distance >20m....)
-      Indications
-        Direction (center 3) cyan->purple->red
-          far: 1pixel triangle?
-          near: 2pixel triangle fade
-          here: full width triangle, proportional on...
-        Distance
-          far mode only
-          white leds: brightest farthest
-            couple of blocks, <mile, >mile
-
-
-
-
-      L | C | R and behind
-      turn proximity: mid, near, now
-      Far, there, AT
-      center for direction, colors..:
-        2,3,4
-        L,C,R
-    */
-};
+#include "NavIndicatorV1.h"
 
 void setup() {
+  
   unsigned long start = millis();
   static Timer timeout(1000);
 
@@ -94,9 +68,12 @@ void setup() {
     //if ( mma_begin() ) { Serial << F("M ok\n"); }
   }
 
+  digitalWrite(LED_BUILTIN, HIGH);
+
   Serial << F("Ready in ") << (millis() - start) << endl << endl;
 }
 
+//void func_with_callback(std::function<void()> callback) {}
 
 boolean strip_begin() {
   static boolean began = false;
@@ -141,7 +118,7 @@ boolean control_neo_begin() {
     control_neo.show();
   }
 
-  static boolean done=false;
+  static boolean done = false;
   done_with_show( []() {
     control_neo.clear();
     control_neo.show();
@@ -152,7 +129,7 @@ boolean control_neo_begin() {
 }
 
 void loop() {
-  static char command = 't'; // default is show prompt
+  static char command = 'a'; // default is show prompt
   static boolean first = true;
 
   static Every check_command(20);
@@ -176,15 +153,27 @@ void loop() {
     // set command to '?' to display menu w/prompt
     // set command to -1 to prompt
     // set command to -2 to just get input
-
+    case 'a' : {
+        static NavIndicatorV1 ni(
+          distance_mode,
+          distance,
+          direction
+          );
+        show_tilt();
+        show_direction();
+        show_encoder();
+        ni.update();
+      }
+      break;
+      
     case 't' :
       show_tilt();
       break;
-      
+
     case 'p' :
       show_direction();
       break;
-      
+
     case 'E':
       plot_encoder_raw();
       break;
@@ -229,5 +218,11 @@ void loop() {
       command = '?';
       break;
   }
+
+  // so you know it's running
+  static Every::Pattern heartbeat(500);
+  heartbeat( []() {
+    digitalWrite(LED_BUILTIN, ! digitalRead(LED_BUILTIN) );
+  });
 
 }

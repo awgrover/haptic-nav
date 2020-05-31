@@ -27,7 +27,7 @@ boolean encoder_begin() {
     return done;
 }
 
-long distance_mode() {
+DistanceMode distance_mode() {
 
   // we get +4 per detent, so /4
   long value = (encoder.read() / 4);
@@ -40,7 +40,7 @@ long distance_mode() {
     encoder.write(value);
   }
   //Serial << value << endl;
-  return value;
+  return (DistanceMode) value;
 }
 
 void plot_encoder_raw() {

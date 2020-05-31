@@ -23,7 +23,23 @@ boolean pot_begin() {
   return ! calibrating;
 }
 
-
+int direction() {
+  // pretend degrees
+  static int last = -1;
+  static Every pot_update(20);
+  static int degrees = 0;
+  
+  if ( pot_update() ) {
+    int pot = analogRead( PotPin );
+    int current = pot_smooth.average( pot );
+    if (current != last) {
+      last = current;
+      degrees = map( current, 10, 1010, 0, 360 );
+      degrees = constrain( degrees, 0, 360);
+    }
+  }
+  return degrees;
+}
 
 boolean t_calculate_direction(
   // just a test calculate, for control_neo

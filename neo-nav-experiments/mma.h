@@ -179,3 +179,7 @@ void triangle_tilt_map2() {
     PWM.commit();
   }
 }
+
+int distance() {
+  return distance_mode() * 100;
+}
