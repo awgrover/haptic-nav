@@ -58,20 +58,37 @@ class NavIndicatorV1 {
 
 void setup() {
   unsigned long start = millis();
+  static Timer timeout(1000);
 
   Serial.begin(115200);
-  Serial << F("Start") << endl;
+  Serial << F("\nStart") << endl;
 
   pinMode(LED_BUILTIN, OUTPUT);
   randomSeed(analogRead(0));
 
+  static Every setting_up_heartbeat(60);
   while (
     !(
       encoder_begin()
       & strip_begin()
       & mma_begin()
     )
-  ) {}
+  ) {
+    // flashes rapidly while waiting for all .begin
+    setting_up_heartbeat( []() {
+      digitalWrite(LED_BUILTIN, ! digitalRead(LED_BUILTIN) );
+    });
+
+    if (timeout()) {
+      Serial << F("setup() timed out in ") << timeout.interval << F("msecs\n");
+      digitalWrite(LED_BUILTIN, HIGH);
+      while (1) {}
+    }
+
+    //if ( encoder_begin() ) { Serial << F("E ok\n"); }
+    //if ( strip_begin() ) { Serial << F("S ok\n");}
+    //if ( mma_begin() ) { Serial << F("M ok\n"); }
+  }
 
   Serial << F("Ready in ") << (millis() - start) << endl;
 }
@@ -117,11 +134,16 @@ boolean strip_begin() {
     }
   }
 
-  static After leave_pwm_on(300ul);
-  return leave_pwm_on([]() {
+  static Timer leave_pwm_on(300ul);
+  static boolean done = false;
+  leave_pwm_on([]() {
     PWM.neo.clear();
     PWM.commit();
+    //Serial << F("NEO showed\n");
+    done = true;
   });
+  //Serial << F("stripped! ") << done << endl;
+  return done;
 }
 
 void loop() {
@@ -141,7 +163,7 @@ void loop() {
   //***
 
   if ( first ) {
-    Serial << command << endl;
+    Serial << F("Command: ") << command << endl;
     first = false;
   }
 
