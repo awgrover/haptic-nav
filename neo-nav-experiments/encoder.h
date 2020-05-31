@@ -10,8 +10,7 @@
 #include <every.h>
 
 Encoder encoder(2, 3); // pins
-const int EncoderPixCount = 5;
-Adafruit_NeoPixel encoder_neo(EncoderPixCount, 5, NEO_RGB + NEO_KHZ800);
+
 enum DistanceMode {
   D_Here, // w/in gps discrimination ~ 3m
   D_AHEAD, // 0-turns && < 20m (1 block)
@@ -20,30 +19,13 @@ enum DistanceMode {
 };
 
 boolean encoder_begin() {
-  static Timer done_with_show(500ul);
-  static boolean began = false;
-
-  if (! began ) {
-    began = true;
-    encoder_neo.begin();
-    encoder_neo.clear();
-    encoder_neo.fill(0x010101ul, 0, EncoderPixCount );
-    encoder_neo.setPixelColor(0, 0x20, 0, 0);
-    encoder_neo.setPixelColor(1, 0, 0x20, 0);
-    encoder_neo.setPixelColor(2, 0, 0, 0x20);
-    encoder_neo.show();
-  }
-
-  static boolean done=false;
-  done_with_show( []() {
-    encoder_neo.clear();
-    encoder_neo.show();
-    Serial << F("encoder ready, discrete pixes ") << EncoderPixCount << endl;
-    done = true;
-  });
-  return done;
+    static boolean done = false;
+    if (! done) {
+        Serial << "Encoder ready" << endl;
+        done = true;
+    }
+    return done;
 }
-
 
 long distance_mode() {
 
@@ -90,12 +72,12 @@ void show_encoder() {
   long value = distance_mode();
   if ( value != last ) {
     /* for (int i = 0; i <= value; i++) {
-      encoder_neo.clear();
-      encoder_neo.setPixelColor(i, 0x20, 0x20, 0x20);
+      control_neo.clear();
+      control_neo.setPixelColor(i, 0x20, 0x20, 0x20);
       } */
-    encoder_neo.setPixelColor(0, distance_colors[ value ] );
-    encoder_neo.show();
-    Serial << value << F(" 0x") << _HEX(distance_colors[ value ]) << endl;
+    control_neo.setPixelColor(0, distance_colors[ value ] );
+    control_neo.show();
+    //Serial << value << F(" 0x") << _HEX(distance_colors[ value ]) << endl;
     last = value;
   }
 }
