@@ -33,8 +33,11 @@ boolean mma_begin() {
 
 void read_mma() {
   // with adjustments
-  mma.getEvent(&mma_data);
-  mma_data.acceleration.x -= offset_x.value();
+  static Every update(30);
+  if ( update() ) {
+    mma.getEvent(&mma_data);
+    mma_data.acceleration.x -= offset_x.value();
+  }
 }
 
 float read_mma_with_smooth() {
@@ -57,9 +60,9 @@ void show_tilt() {
   static Every update(20);
 
   if (update()) {
-      // 2 is tilt left
+    // 2 is tilt left
     float x = read_mma_with_smooth();
-    x = constrain(x,-2.0,2.0);
+    x = constrain(x, -2.0, 2.0);
     float delta = map( x, -2.0, 2.0, 0.0, 1.0);
     //Serial << x << F(" ") << delta << endl;
 
@@ -136,6 +139,31 @@ void triangle_tilt_map() {
   }
 }
 
+static int _turn_direction;
+int turn_direction() {
+  return _turn_direction;
+}
+
+int turn_distance() {
+  // calcs both
+  float x = read_mma_with_smooth();
+  if (abs(x) > 0.2) {
+    _turn_direction = x > 0 ? 1 : -1;
+    int dist = map(
+                 constrain(abs(x), 0, 2.0 ),
+                 0.0, 2.0, 0.0,50.0
+               );
+    static Every debug(500);
+    if (debug()) {
+      Serial << F("Tdist ") << x << F(" ") << dist << endl;
+    }
+    return dist;
+  }
+  else {
+    _turn_direction = 0;
+    return 0;
+  }
+}
 void triangle_tilt_map2() {
   // a "Triangle" of brightness over +-2
   // pretty nice, but not nav useful?

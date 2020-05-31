@@ -41,22 +41,105 @@ class NavIndicatorV1 {
     DistanceMode (&distance_mode)();
     int (&distance)();
     int (&direction)();
+    int (&turn_distance)();
+    int (&turn_direction)();
 
     NavIndicatorV1(
       DistanceMode (&distance_mode)(),
       int (&distance)(),
-      int (&direction)()
-    ) : distance_mode(distance_mode), distance(distance), direction(direction) {
+      int (&direction)(), // combine?
+      int (&turn_distance)(),
+      int (&turn_direction)()
+    ) : distance_mode(distance_mode),
+      distance(distance), direction(direction),
+      turn_distance(turn_distance), turn_direction(turn_direction)
+    {
     }
 
     void update() {
       static Every update_t(20);
+
       if (update_t()) {
-        boolean update_pwm = false;
         DistanceMode dm = distance_mode();
-        update_pwm = update_pwm | show_direction(dm);
+        static Changed<DistanceMode> dist_mode_changed;
+        if ( dist_mode_changed(dm) ) {
+          PWM.neo.fill(0, 0, 7);
+          PWM.commit();
+          Serial << F("dm ") << dm << endl;
+        }
+
+        boolean update_pwm = false;
+        update_pwm =
+          update_pwm
+          | show_direction(dm)
+          | show_turn(dm)
+          ;
 
         if (update_pwm) PWM.commit();
+      }
+    }
+
+    boolean show_turn(DistanceMode dist_mode) {
+      // return true if PWM pixels should be updated
+
+      switch (dist_mode) {
+        case D_None:
+          return false;
+          break;
+
+        case D_Here : // w/in gps discrimination ~ 3m
+        case D_AHEAD : // 0-turns && < 20m (1 block)
+          return false;
+          break;
+        case D_ALMOST : // 1-turn or not D_AHEAD
+        case D_FAR :
+          return turn_indicate(turn_distance(), turn_direction());
+          break;
+      }
+
+      Serial << F(" unhandled dm ") << dist_mode << endl;
+      return false;
+    }
+
+    boolean turn_indicate(int turn_distance, int turn_direction) {
+      // return true if PWM pixels should be updated
+
+      if ( turn_direction == 0 ) {
+        PWM.neo.fill(0x000000, 0, 2);
+        PWM.neo.fill(0x000000, 5, 2);
+        return true;
+      }
+      else {
+        int a, b;
+
+        if ( turn_distance < 10 ) { // should be 10
+          a = 0x10;
+          b = 0x10; // FIXME: max_green
+        }
+        else if ( turn_distance < 40 ) {
+          // should be "next possible turn"
+          a = 0x10;
+          b = 0x01; // FIXME: max_green
+        }
+        else {
+          // far
+          a = 0x01;
+          b = 0x01;
+        }
+
+
+        if ( turn_direction < 0 ) {
+          PWM.neo.fill(0x000000, 0, 2);
+          PWM.neo.setPixelColor( 0, 0, a, 0 );
+          PWM.neo.setPixelColor( 1, 0, b, 0 );
+        }
+        else {
+          PWM.neo.fill(0x000000, 5, 2);
+          PWM.neo.setPixelColor( 6, 0, a, 0 );
+          PWM.neo.setPixelColor( 5, 0, b, 0 );
+        }
+
+        return true;
       }
     }
 
@@ -70,14 +153,8 @@ class NavIndicatorV1 {
         Almost : full width triangle, proportional to dist
         Here : just street side
       */
-      static Changed<DistanceMode> dist_mode_changed;
-      if ( dist_mode_changed(dist_mode) ) {
-        PWM.neo.clear();
-        PWM.commit();
-        Serial << F("dm ") << dist_mode << endl;
-      }
 
-      switch (dist_mode) {
+      switch (dist_mode) { // FIXME: fold the caseblocks together
         case D_None:
           return false;
           break;
@@ -106,7 +183,7 @@ class NavIndicatorV1 {
       static Changed<byte> red_changed, blue_changed;
 
       int pix = center_pixel;
-      static Changed<int> pix_changed;
+      static Changed<int> pix_changed(-1);
 
       if (direction >= (360 - 45) || direction < 45) {
         // center takes up 90degrees! when far away
@@ -139,7 +216,7 @@ class NavIndicatorV1 {
         | pix_changed(pix)
         | distance_brightness_changed(distance_brightness)
       ) {
-        Serial << F("D ") << distance() << F(" ") << distance_brightness << endl;
+        //Serial << F("D ") << distance() << F(" ") << distance_brightness << endl;
         unsigned long db =
           ((unsigned long)distance_brightness << 16)
           + ((unsigned long)distance_brightness << 8)

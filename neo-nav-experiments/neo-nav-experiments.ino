@@ -157,7 +157,9 @@ void loop() {
         static NavIndicatorV1 ni(
           distance_mode,
           distance,
-          direction
+          direction,
+          turn_distance,
+          turn_direction
           );
         show_tilt();
         show_direction();
