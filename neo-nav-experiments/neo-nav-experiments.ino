@@ -11,6 +11,7 @@
 */
 #include <Streaming.h>
 #include <array_size.h>
+#include "fmap.h"
 
 #define NeoNumPixels 7
 #define NeoI2CPin 6
@@ -151,7 +152,7 @@ boolean control_neo_begin() {
 }
 
 void loop() {
-  static char command = 'p'; // default is show prompt
+  static char command = 't'; // default is show prompt
   static boolean first = true;
 
   static Every check_command(20);
@@ -176,6 +177,10 @@ void loop() {
     // set command to -1 to prompt
     // set command to -2 to just get input
 
+    case 't' :
+      show_tilt();
+      break;
+      
     case 'p' :
       show_direction();
       break;
@@ -225,10 +230,4 @@ void loop() {
       break;
   }
 
-}
-
-
-float map(float x, float in_min, float in_max, float out_min, float out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }

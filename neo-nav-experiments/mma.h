@@ -3,6 +3,8 @@ Adafruit_MMA8451 mma;
 sensors_event_t mma_data;
 ExponentialSmooth<float> offset_x(100);
 
+#include "fmap.h"
+
 boolean mma_begin() {
   static boolean began = false;
 
@@ -55,17 +57,20 @@ void show_tilt() {
   static Every update(20);
 
   if (update()) {
+      // 2 is tilt left
     float x = read_mma_with_smooth();
+    x = constrain(x,-2.0,2.0);
     float delta = map( x, -2.0, 2.0, 0.0, 1.0);
+    //Serial << x << F(" ") << delta << endl;
 
     byte left = 1, right = 1;
     int l_pix = 4, r_pix = 3;
     const int max_green = 0x30;
-    if (delta < 0.5) {
-      left = delta * max_green;
+    if (delta > 0.55) {
+      left = (delta - 0.5) * max_green;
     }
-    else {
-      right = (1.0 - delta) * max_green;
+    else if (delta < 0.45) {
+      right = ((1.0 - delta) - 0.5) * max_green;
     }
     control_neo.setPixelColor( l_pix, 00, left, 00 );
     control_neo.setPixelColor( r_pix, 00, right, 00 );
