@@ -12,6 +12,7 @@
 Encoder encoder(2, 3); // pins
 
 enum DistanceMode {
+  D_None = -1, // good for initing
   D_Here, // w/in gps discrimination ~ 3m
   D_AHEAD, // 0-turns && < 20m (1 block)
   D_ALMOST, // 1-turn or not D_AHEAD
@@ -21,6 +22,7 @@ enum DistanceMode {
 boolean encoder_begin() {
     static boolean done = false;
     if (! done) {
+        encoder.write( (int) D_FAR );
         Serial << "Encoder ready" << endl;
         done = true;
     }
