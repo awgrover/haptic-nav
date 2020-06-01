@@ -22,8 +22,8 @@ enum DistanceMode {
 boolean encoder_begin() {
     static boolean done = false;
     if (! done) {
-        encoder.write( (int) D_FAR );
-        Serial << "Encoder ready" << endl;
+        encoder.write( D_FAR * 4 );
+        Serial << "Encoder ready " << encoder.read() << endl;
         done = true;
     }
     return done;

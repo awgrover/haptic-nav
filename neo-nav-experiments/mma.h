@@ -153,10 +153,10 @@ int turn_distance() {
                  constrain(abs(x), 0, 2.0 ),
                  0.0, 2.0, 0.0,50.0
                );
-    static Every debug(500);
+    /*static Every debug(500);
     if (debug()) {
       Serial << F("Tdist ") << x << F(" ") << dist << endl;
-    }
+    }*/
     return dist;
   }
   else {

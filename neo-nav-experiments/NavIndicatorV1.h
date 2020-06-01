@@ -112,7 +112,7 @@ class NavIndicatorV1 {
       else {
         int a, b;
 
-        if ( turn_distance < 10 ) { // should be 10
+        if ( turn_distance < 5 ) { // more like immediate
           a = 0x10;
           b = 0x10; // FIXME: max_green
         }
@@ -223,7 +223,13 @@ class NavIndicatorV1 {
           + (distance_brightness)
           ;
         PWM.neo.fill(db, center_pixel - 1, 3 );
-        PWM.neo.setPixelColor( pix, red, 0, blue, 0 );
+        if (direction >= (180 - 10) && direction <= (180 + 10) ) {
+          PWM.neo.setPixelColor( center_pixel - 1, red, 0, blue, 0 );
+          PWM.neo.setPixelColor( center_pixel + 1, red, 0, blue, 0 );
+        }
+        else {
+          PWM.neo.setPixelColor( pix, red, 0, blue, 0 );
+        }
         return true;
       }
       return false;
