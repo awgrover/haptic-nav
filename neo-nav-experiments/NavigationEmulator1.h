@@ -3,24 +3,27 @@
 #include <Adafruit_MMA8451.h>
 #include <Adafruit_NeoPixel.h>
 
+
 #include <ExponentialSmooth.h>
+
 #include "fmap.h"
 #include "Navigation.h"
 
 constexpr int ControlPixCount = 5;
 Adafruit_NeoPixel control_neo(ControlPixCount, 5, NEO_RGB + NEO_KHZ800);
 
+#include "EncoderNav.h"
+#include "MMANav.h"
 #include "PotNav.h"
 
-
 class NavigationEmulator1 : public Navigation {
-#include "MMANav.h"
 
     int _turn_direction; // cached by turn_distance()
 
   public:
     MMANav mma_nav;
     PotNav pot_nav;
+    EncoderNav encoder_nav;
 
     NavigationEmulator1() {
       //this->mma_nav = new MMA;
@@ -32,7 +35,7 @@ class NavigationEmulator1 : public Navigation {
 
       if (
         control_neo_begin()
-        & encoder_begin()
+        & encoder_nav.begin()
         & mma_nav.begin()
         & pot_nav.begin()
       ) {
@@ -48,7 +51,7 @@ class NavigationEmulator1 : public Navigation {
       // call periodically
       mma_nav.show_tilt();
       pot_nav.show_direction();
-      show_encoder();
+      encoder_nav.show_encoder();
     }
 
     void debug_mode(char command) {
@@ -77,6 +80,14 @@ class NavigationEmulator1 : public Navigation {
         */
         case 'p' :
           pot_nav.show_direction();
+          break;
+
+        case 'E':
+          encoder_nav.plot_encoder_raw();
+          break;
+
+        case 'e':
+          encoder_nav.show_encoder();
           break;
 
         default :

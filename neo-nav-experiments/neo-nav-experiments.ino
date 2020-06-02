@@ -18,9 +18,6 @@
 
 #include <every.h>
 
-
-#include "encoder.h"
-
 #include "Navigation.h"
 #include "NavigationEmulator1.h"
 #include "NavIndicatorV1.h"
@@ -101,15 +98,9 @@ void loop() {
       break;
 
     case 'E':
-      plot_encoder_raw();
-      break;
-
     case 'e':
-      show_encoder();
-      break;
-
     case 'p' :
-     case 't' :
+    case 't' :
     case '3':
     case '2':
     case '1':

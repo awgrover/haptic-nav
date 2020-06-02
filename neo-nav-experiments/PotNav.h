@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Navigation.h"
-
 class PotNav {
     static constexpr int PotPin = A0;
     ExponentialSmooth<int> pot_smooth = ExponentialSmooth<int>(10);
