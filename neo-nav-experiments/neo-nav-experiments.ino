@@ -37,9 +37,10 @@ void setup() {
   randomSeed(analogRead(0));
 
   static Every setting_up_heartbeat(60);
-  while ( !
-          navigation.begin()
-          | nav_indicator.begin()
+  while ( ! (
+            navigation.begin()
+            | nav_indicator.begin()
+          )
         )
   {
     // flashes rapidly while waiting for all .begin

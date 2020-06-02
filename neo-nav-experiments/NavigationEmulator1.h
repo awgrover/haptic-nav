@@ -32,19 +32,21 @@ class NavigationEmulator1 : public Navigation {
     boolean begin() {
       // inits all it's dependants
       // call until true
+      static boolean began = false;
 
-      if (
-        control_neo_begin()
-        & encoder_nav.begin()
-        & mma_nav.begin()
-        & pot_nav.begin()
-      ) {
-        turn_direction(); // initial
-        return true;
+      if (! began) {
+        if (
+          control_neo_begin()
+          & encoder_nav.begin()
+          & mma_nav.begin()
+          & pot_nav.begin()
+        ) {
+          Serial << F("Nav Emulator ready\n");
+          turn_direction(); // initial
+          began = true;
+        }
       }
-      else {
-        return false;
-      }
+      return began;
     }
 
     void update() {
@@ -98,8 +100,9 @@ class NavigationEmulator1 : public Navigation {
     int direction() {
       return pot_nav.direction();  // degrees
     }
+    
     DistanceMode distance_mode() {
-      return distance_mode();  // see enum
+      return encoder_nav.distance_mode();  // see enum
     }
 
     int turn_direction() {

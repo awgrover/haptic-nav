@@ -3,7 +3,7 @@
 #define NeoNumPixels 7
 #define NeoI2CPin 6
 #include <pwm/PWM_NeoPixel.h>
-
+#include <every.h>
 
 #include "Changed.h"
 
@@ -53,14 +53,12 @@ class NavIndicatorV1 {
       static boolean began = false;
 
       if (! began) {
-        if ( (began = PWM.begin(0)) ) {
+        if ( PWM.begin(0) ) {
           Serial << F("NEO ready, pixes ") << NeoNumPixels << endl;
           PWM.neo.clear();
           PWM.neo.fill(0x001010, 0, 6);
           PWM.commit();
-        }
-        else {
-          return false;
+          began = true;
         }
       }
 
@@ -80,6 +78,7 @@ class NavIndicatorV1 {
       static Every update_t(20);
 
       if (update_t()) {
+
         Navigation::DistanceMode dm = navigation.distance_mode();
         static Changed<Navigation::DistanceMode> dist_mode_changed;
         if ( dist_mode_changed(dm) ) {
