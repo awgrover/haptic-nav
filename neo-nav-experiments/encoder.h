@@ -8,28 +8,21 @@
 #include <Encoder.h>
 
 #include <every.h>
+#include "Navigation.h"
 
 Encoder encoder(2, 3); // pins
-
-enum DistanceMode {
-  D_None = -1, // good for initing
-  D_Here, // w/in gps discrimination ~ 3m
-  D_AHEAD, // 0-turns && < 20m (1 block)
-  D_ALMOST, // 1-turn or not D_AHEAD
-  D_FAR     // > 1-turn
-};
 
 boolean encoder_begin() {
     static boolean done = false;
     if (! done) {
-        encoder.write( D_FAR * 4 );
+        encoder.write( Navigation::D_FAR * 4 );
         Serial << "Encoder ready " << encoder.read() << endl;
         done = true;
     }
     return done;
 }
 
-DistanceMode distance_mode() {
+Navigation::DistanceMode distance_mode() {
 
   // we get +4 per detent, so /4
   long value = (encoder.read() / 4);
@@ -42,7 +35,7 @@ DistanceMode distance_mode() {
     encoder.write(value);
   }
   //Serial << value << endl;
-  return (DistanceMode) value;
+  return (Navigation::DistanceMode) value;
 }
 
 void plot_encoder_raw() {

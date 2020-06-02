@@ -1,5 +1,10 @@
 #pragma once
 
+#define NeoNumPixels 7
+#define NeoI2CPin 6
+#include <pwm/PWM_NeoPixel.h>
+
+
 #include "Changed.h"
 
 class NavIndicatorV1 {
@@ -35,33 +40,48 @@ class NavIndicatorV1 {
     */
 
   public:
+    PWM_NeoPixel PWM;
     static constexpr int center_pixel = 3;
     static constexpr int max_blue = 0x20, max_red = 0x15, max_white = 0x10; // fixme for brightness
 
-    DistanceMode (&distance_mode)();
-    int (&distance)();
-    int (&direction)();
-    int (&turn_distance)();
-    int (&turn_direction)();
+    Navigation &navigation;
 
-    NavIndicatorV1(
-      DistanceMode (&distance_mode)(),
-      int (&distance)(),
-      int (&direction)(), // combine?
-      int (&turn_distance)(),
-      int (&turn_direction)()
-    ) : distance_mode(distance_mode),
-      distance(distance), direction(direction),
-      turn_distance(turn_distance), turn_direction(turn_direction)
-    {
+    NavIndicatorV1( Navigation &navigation) : navigation(navigation) {
+    }
+
+    boolean begin() {
+      static boolean began = false;
+
+      if (! began) {
+        if ( (began = PWM.begin(0)) ) {
+          Serial << F("NEO ready, pixes ") << NeoNumPixels << endl;
+          PWM.neo.clear();
+          PWM.neo.fill(0x001010, 0, 6);
+          PWM.commit();
+        }
+        else {
+          return false;
+        }
+      }
+
+      static Timer leave_pwm_on(300ul);
+      static boolean done = false;
+      if ( leave_pwm_on() ) {
+        PWM.neo.clear();
+        PWM.commit();
+        //Serial << F("NEO showed\n");
+        done = true;
+      }
+      //Serial << F("stripped! ") << done << endl;
+      return done;
     }
 
     void update() {
       static Every update_t(20);
 
       if (update_t()) {
-        DistanceMode dm = distance_mode();
-        static Changed<DistanceMode> dist_mode_changed;
+        Navigation::DistanceMode dm = navigation.distance_mode();
+        static Changed<Navigation::DistanceMode> dist_mode_changed;
         if ( dist_mode_changed(dm) ) {
           PWM.neo.fill(0, 0, 7);
           PWM.commit();
@@ -79,21 +99,21 @@ class NavIndicatorV1 {
       }
     }
 
-    boolean show_turn(DistanceMode dist_mode) {
+    boolean show_turn(Navigation::DistanceMode dist_mode) {
       // return true if PWM pixels should be updated
 
       switch (dist_mode) {
-        case D_None:
+        case Navigation::D_None:
           return false;
           break;
 
-        case D_Here : // w/in gps discrimination ~ 3m
-        case D_AHEAD : // 0-turns && < 20m (1 block)
+        case Navigation::D_Here : // w/in gps discrimination ~ 3m
+        case Navigation::D_AHEAD : // 0-turns && < 20m (1 block)
           return false;
           break;
-        case D_ALMOST : // 1-turn or not D_AHEAD
-        case D_FAR :
-          return turn_indicate(turn_distance(), turn_direction());
+        case Navigation::D_ALMOST : // 1-turn or not D_AHEAD
+        case Navigation::D_FAR :
+          return turn_indicate(navigation.turn_distance(), navigation.turn_direction());
           break;
       }
 
@@ -143,7 +163,7 @@ class NavIndicatorV1 {
       }
     }
 
-    boolean show_direction(DistanceMode dist_mode) {
+    boolean show_direction(Navigation::DistanceMode dist_mode) {
       // return true if PWM pixels should be updated
       /*
         (center 3) cyan->purple->red
@@ -155,21 +175,21 @@ class NavIndicatorV1 {
       */
 
       switch (dist_mode) { // FIXME: fold the caseblocks together
-        case D_None:
+        case Navigation::D_None:
           return false;
           break;
 
-        case D_Here : // w/in gps discrimination ~ 3m
+        case Navigation::D_Here : // w/in gps discrimination ~ 3m
           return this->blink();
           break;
-        case D_AHEAD : // 0-turns && < 20m (1 block)
+        case Navigation::D_AHEAD : // 0-turns && < 20m (1 block)
           return this->blink();
           break;
-        case D_ALMOST : // 1-turn or not D_AHEAD
+        case Navigation::D_ALMOST : // 1-turn or not D_AHEAD
           return this->blink();
           break;
-        case D_FAR :
-          return single_dist(dist_mode, direction());
+        case Navigation::D_FAR :
+          return single_dist(dist_mode, navigation.direction());
           break;
       }
 
@@ -177,7 +197,7 @@ class NavIndicatorV1 {
       return false;
     }
 
-    boolean single_dist(DistanceMode dist_mode, int direction) {
+    boolean single_dist(Navigation::DistanceMode dist_mode, int direction) {
       // L|R|C for distance indicator
       byte red, blue;
       static Changed<byte> red_changed, blue_changed;
@@ -206,7 +226,7 @@ class NavIndicatorV1 {
 
       static Changed<int> distance_brightness_changed;
       int distance_brightness = map(
-                                  constrain(distance(), 0, 10000),
+                                  constrain(navigation.distance(), 0, 10000),
                                   0, 400, 0, max_white
                                 );
 
@@ -216,7 +236,7 @@ class NavIndicatorV1 {
         | pix_changed(pix)
         | distance_brightness_changed(distance_brightness)
       ) {
-        //Serial << F("D ") << distance() << F(" ") << distance_brightness << endl;
+        //Serial << F("D ") << navigation.distance() << F(" ") << distance_brightness << endl;
         unsigned long db =
           ((unsigned long)distance_brightness << 16)
           + ((unsigned long)distance_brightness << 8)
@@ -237,9 +257,9 @@ class NavIndicatorV1 {
 
     boolean blink() {
       static Every::Toggle blinker(300);
-      return blinker( []() {
-        PWM.neo.fill(0x101010ul * blinker.state, 0, 7);
-        PWM.commit();
+      return blinker( [this]() {
+        this->PWM.neo.fill(0x101010ul * blinker.state, 0, 7);
+        this->PWM.commit();
       });
     }
 };
