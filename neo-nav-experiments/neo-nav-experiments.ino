@@ -1,5 +1,3 @@
-
-
 /*
   Experiments in nav indication using 7 Neo strip
 
@@ -13,7 +11,6 @@
 */
 
 #include <Streaming.h>
-#include <array_size.h>
 #include "fmap.h"
 
 #include <every.h>
@@ -53,10 +50,6 @@ void setup() {
       digitalWrite(LED_BUILTIN, HIGH);
       while (1) {}
     }
-
-    //if ( encoder_begin() ) { Serial << F("E ok\n"); }
-    //if ( strip_begin() ) { Serial << F("S ok\n");}
-    //if ( mma_begin() ) { Serial << F("M ok\n"); }
   }
 
   digitalWrite(LED_BUILTIN, HIGH);
@@ -64,11 +57,8 @@ void setup() {
   Serial << F("Ready in ") << (millis() - start) << endl << endl;
 }
 
-//void func_with_callback(std::function<void()> callback) {}
-
-
 void loop() {
-  static char command = 'a'; // default is show prompt
+  static char command = 'a';
   static boolean first = true;
 
   static Every check_command(20);
