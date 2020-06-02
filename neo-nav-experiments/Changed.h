@@ -1,3 +1,5 @@
+#pragma once
+
 template<typename T>
 class Changed {
     // track a value, report if changed vs a new value

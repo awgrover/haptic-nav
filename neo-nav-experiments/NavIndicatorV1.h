@@ -90,35 +90,13 @@ class NavIndicatorV1 {
         boolean update_pwm = false;
         update_pwm =
           update_pwm
-          | show_direction(dm)
-          | show_turn(dm)
+          | show_turn_and_direction(dm)
           ;
 
         if (update_pwm) PWM.commit();
       }
     }
 
-    boolean show_turn(Navigation::DistanceMode dist_mode) {
-      // return true if PWM pixels should be updated
-
-      switch (dist_mode) {
-        case Navigation::D_None:
-          return false;
-          break;
-
-        case Navigation::D_Here : // w/in gps discrimination ~ 3m
-        case Navigation::D_AHEAD : // 0-turns && < 20m (1 block)
-          return false;
-          break;
-        case Navigation::D_ALMOST : // 1-turn or not D_AHEAD
-        case Navigation::D_FAR :
-          return turn_indicate(navigation.turn_distance(), navigation.turn_direction());
-          break;
-      }
-
-      Serial << F(" unhandled dm ") << dist_mode << endl;
-      return false;
-    }
 
     boolean turn_indicate(int turn_distance, int turn_direction) {
       // return true if PWM pixels should be updated
@@ -162,7 +140,7 @@ class NavIndicatorV1 {
       }
     }
 
-    boolean show_direction(Navigation::DistanceMode dist_mode) {
+    boolean show_turn_and_direction(Navigation::DistanceMode dist_mode) {
       // return true if PWM pixels should be updated
       /*
         (center 3) cyan->purple->red
@@ -185,10 +163,12 @@ class NavIndicatorV1 {
           return this->blink();
           break;
         case Navigation::D_ALMOST : // 1-turn or not D_AHEAD
-          return this->blink();
+          return turn_indicate(navigation.turn_distance(), navigation.turn_direction())
+                 | this->blink();
           break;
         case Navigation::D_FAR :
-          return single_dist(dist_mode, navigation.direction());
+          return turn_indicate(navigation.turn_distance(), navigation.turn_direction())
+                 | single_dist(dist_mode, navigation.direction());
           break;
       }
 
@@ -225,10 +205,11 @@ class NavIndicatorV1 {
 
       static Changed<int> distance_brightness_changed;
       int distance_brightness = map(
-                                  constrain(navigation.distance(), 0, 10000),
-                                  0, 400, 0, max_white
+                                  constrain(navigation.distance(), 1000, 10000),
+                                  0, 10000, 0, max_white
                                 );
-
+      //Serial << distance_brightness << F(" ") << navigation.distance() << endl;
+      
       if (
         red_changed(red)
         | blue_changed(blue)

@@ -36,7 +36,7 @@ void setup() {
   static Every setting_up_heartbeat(60);
   while ( ! (
             navigation.begin()
-            | nav_indicator.begin()
+            & nav_indicator.begin()
           )
         )
   {

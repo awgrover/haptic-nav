@@ -3,7 +3,6 @@
 #include <Adafruit_MMA8451.h>
 #include <Adafruit_NeoPixel.h>
 
-
 #include <ExponentialSmooth.h>
 
 #include "fmap.h"
@@ -51,6 +50,7 @@ class NavigationEmulator1 : public Navigation {
 
     void update() {
       // call periodically
+      mma_nav.read_mma_with_smooth();
       mma_nav.show_tilt();
       pot_nav.show_direction();
       encoder_nav.show_encoder();
@@ -75,11 +75,12 @@ class NavigationEmulator1 : public Navigation {
           case '2':
           mma_nav.triangle_tilt_map();
           break;
+        */
 
-          case '1':
+        case '1':
           mma_nav.simple_tilt_map();
           break;
-        */
+
         case 'p' :
           pot_nav.show_direction();
           break;
@@ -100,7 +101,7 @@ class NavigationEmulator1 : public Navigation {
     int direction() {
       return pot_nav.direction();  // degrees
     }
-    
+
     DistanceMode distance_mode() {
       return encoder_nav.distance_mode();  // see enum
     }
@@ -111,7 +112,7 @@ class NavigationEmulator1 : public Navigation {
 
     int turn_distance() {
       // calcs both
-      float x = mma_nav.read_mma_with_smooth();
+      float x = mma_nav.smooth_x();
       if (abs(x) > 0.2) {
         _turn_direction = x > 0 ? 1 : -1;
         int dist = map(
@@ -131,7 +132,7 @@ class NavigationEmulator1 : public Navigation {
     }
 
     int distance() {
-      return distance_mode() * 100;
+      return abs( 4000 - abs(mma_nav.smooth_y()) * 5000 ); // 0..30000
     }
 
     boolean control_neo_begin() {
