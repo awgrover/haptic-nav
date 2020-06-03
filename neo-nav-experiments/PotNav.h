@@ -73,7 +73,7 @@ class PotNav {
 
           control_neo.fill(0x0, 1, 2);
           // we are using the discreet strip, conveniently oriented
-          pix = degrees < 180 ? 1 : 2;
+          pix = degrees < 180 ? 2 : 1;
           if (degrees > 180) degrees = 180 - (degrees - 180); // so 0..180 again
           // should be a factor of distance_mode:
 

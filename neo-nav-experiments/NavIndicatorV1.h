@@ -226,6 +226,71 @@ class NavIndicatorV1 {
         changed = true;
       }
 
+      // direction
+      const int width = 2; // actually width = 2x + 1
+
+      byte red, blue;
+      int pix; // ignored
+      static Changed<byte> red_changed, blue_changed;
+      calc_direction(direction, pix, red, blue);
+
+      float d;
+      // work in -180..180
+      if (direction <= 180 ) {
+        d = direction;
+      }
+      else {
+        d = direction - 360;
+      }
+      //Serial << F("dir") << direction << F(" d") << d << F(" ");
+
+      int pix_start = 1;
+      int pix_end = NeoNumPixels - 2;
+      
+      static Changed<float> led_center_changed;
+      float led_center = map( d, -180.0, 180.0, (float)pix_end+1, (float)pix_start-1 );
+
+      if (led_center_changed( led_center )) {
+        float left_most = led_center - width;
+        float right_most = led_center + width;
+        // center,diff from int
+        //Serial << (int) led_center << F(" ") << (led_center - (int) led_center) << F(" ");
+
+        for (float p = pix_start; p <= pix_end; p++) {
+          // outside our triangle (+- 1), it's zero
+          if ( p < left_most || p > right_most) {
+            //Serial << 0 << F(" ");
+            PWM.neo.setPixelColor( (int) p, 0, 0, 0 );
+          }
+          else {
+            float diff;
+            if (p <= led_center) {
+              diff = p - left_most;
+            }
+            else if ( p > led_center) {
+              diff = right_most - p;
+            }
+            float scale = diff / width; // 0..1
+
+            int redx = red * scale;
+            if (redx == 0 && scale > 0.0) redx = 1;
+
+            int bluex = blue * scale;
+            if (bluex == 0 && scale > 0.0) bluex = 1;
+
+            PWM.neo.setPixelColor( p, redx, 0, bluex );
+          }
+        }
+        if (direction >= (180 - 10) && direction <= (180 + 10) ) {
+          // "directly" behind
+          PWM.neo.setPixelColor( pix_start, red, 0, blue, 0 );
+          PWM.neo.setPixelColor( pix_end, red, 0, blue, 0 );
+        }
+        changed |= true;
+      }
+
+      //Serial << endl;
+
       return changed;
     }
 
@@ -233,7 +298,7 @@ class NavIndicatorV1 {
       // no distance indicator, just direction
       // show direction as /\ across 3 pixels
       byte red, blue;
-      static Changed<byte> red_changed, blue_changed;
+      //static Changed<byte> red_changed, blue_changed;
 
       int pix; // center pix for direction +(-1,0,1)
       static Changed<int> pix_changed(-1);
@@ -241,9 +306,9 @@ class NavIndicatorV1 {
       // get us the color, ignore the pix
       boolean calc_changed = calc_direction(direction, pix, red, blue);
 
-      // figure out the distribution /\ across the 3 pixelsf
+      // figure out the distribution /\ across the 3 pixels
       float d;
-      // work in -180..180, but also need which side
+      // work in -180..180
       if (direction <= 180 ) {
         d = direction;
       }
