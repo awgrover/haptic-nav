@@ -8,8 +8,8 @@ class Navigation {
 
   public:
     enum DistanceMode {
-      D_None = -1, // good for initing
-      D_Here, // w/in gps discrimination ~ 3m
+      D_NONE = -1, // good for initing
+      D_HERE, // w/in gps discrimination ~ 3m
       D_AHEAD, // 0-turns && < 20m (1 block)
       D_ALMOST, // 1-turn or not D_AHEAD
       D_FAR     // > 1-turn

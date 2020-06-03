@@ -132,7 +132,34 @@ class NavigationEmulator1 : public Navigation {
     }
 
     int distance() {
-      return abs( 4000 - abs(mma_nav.smooth_y()) * 5000 ); // 0..30000
+      float from = 0;
+      float to = 5000;
+
+      switch ( distance_mode() ) {
+        // we get 0 .. 5 from y
+        case D_FAR :
+          from = 100;
+          to = 3000;
+          break;
+        case D_ALMOST :
+          from = 40;
+          to = 200;
+          break;
+        case D_AHEAD :
+          from = 10;
+          to = 100;
+          break;
+        case D_HERE :
+          from = 0;
+          to = 10;
+          break;
+        default:
+          break;
+
+      }
+
+      // flat ~= farthest, so reverse to/from
+      return constrain(map(abs(mma_nav.smooth_y()), 0.0, 5.0, to, from), from, to);
     }
 
     boolean control_neo_begin() {

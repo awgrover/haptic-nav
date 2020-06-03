@@ -151,16 +151,17 @@ class NavIndicatorV1 {
         Here : just street side
       */
 
-      switch (dist_mode) { // FIXME: fold the caseblocks together
-        case Navigation::D_None:
-          return false;
+      switch (dist_mode) {
+        case Navigation::D_NONE:
+          return this->blink();
           break;
 
-        case Navigation::D_Here : // w/in gps discrimination ~ 3m
+        case Navigation::D_HERE : // w/in gps discrimination ~ 3m
+          //constexpr int gps_resolution = 10; // can't actually tell below that
           return this->blink();
           break;
         case Navigation::D_AHEAD : // 0-turns && < 20m (1 block)
-          return this->blink();
+          return near_distance( navigation.direction(), navigation.distance() );
           break;
         case Navigation::D_ALMOST : // 1-turn or not D_AHEAD
           return turn_indicate(navigation.turn_distance(), navigation.turn_direction())
@@ -210,6 +211,22 @@ class NavIndicatorV1 {
              | blue_changed(blue)
              | pix_changed(pix)
              ;
+    }
+
+    boolean near_distance(int direction, int distance) {
+      // almost full width, use outside for distance
+
+      boolean changed = false;
+      byte d_value = constrain( map(distance, 0, 100, 0, max_white), 0, max_white);
+
+      static Changed<byte> changed_d_v(-1);
+      if ( changed_d_v(d_value) ) {
+        PWM.neo.setPixelColor( (int) 0, d_value, d_value, d_value );
+        PWM.neo.setPixelColor( (int) NeoNumPixels - 1, d_value, d_value, d_value );
+        changed = true;
+      }
+
+      return changed;
     }
 
     boolean almost_distance(int direction) {

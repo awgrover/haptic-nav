@@ -70,7 +70,7 @@ class MMANav {
     }
 
     float smooth_y() {
-      return mma_smooth_x.value();
+      return mma_smooth_y.value();
     }
 
 
