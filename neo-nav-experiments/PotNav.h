@@ -37,7 +37,7 @@ class PotNav {
         int current = pot_smooth.average( pot );
         if (current != last) {
           last = current;
-          degrees = map( current, 10, 1010, 0, 360 );
+          degrees = map( current, 50, 990, 0, 360 );
           degrees = constrain( degrees, 0, 360);
           degrees = (degrees + 180 ) % 360; // dead is behind
         }

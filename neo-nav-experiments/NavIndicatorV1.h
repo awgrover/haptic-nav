@@ -164,11 +164,11 @@ class NavIndicatorV1 {
           break;
         case Navigation::D_ALMOST : // 1-turn or not D_AHEAD
           return turn_indicate(navigation.turn_distance(), navigation.turn_direction())
-                 | this->blink();
+                 | almost_distance(navigation.direction());
           break;
         case Navigation::D_FAR :
           return turn_indicate(navigation.turn_distance(), navigation.turn_direction())
-                 | single_dist(dist_mode, navigation.direction());
+                 | single_distance(navigation.direction());
           break;
       }
 
@@ -176,12 +176,14 @@ class NavIndicatorV1 {
       return false;
     }
 
-    boolean single_dist(Navigation::DistanceMode dist_mode, int direction) {
+    boolean calc_direction(int direction, int &pix, byte &red, byte &blue) {
+      // true if a change
+      // pix is the "center" pixel for the direction
+
       // L|R|C for distance indicator
-      byte red, blue;
       static Changed<byte> red_changed, blue_changed;
 
-      int pix = center_pixel;
+      pix = center_pixel;
       static Changed<int> pix_changed(-1);
 
       if (direction >= (360 - 45) || direction < 45) {
@@ -198,10 +200,105 @@ class NavIndicatorV1 {
 
       // "behindness" colors
       if ( direction >= 45 && direction < (360 - 45) ) {
+        // just work in 0..180
         int d = (direction > 180) ? 180 - (direction - 180) : direction;
         red = map( d, 45, 180, 4, max_red );
         blue = map( d, 45, 180, max_blue, 4 );
       }
+
+      return red_changed(red)
+             | blue_changed(blue)
+             | pix_changed(pix)
+             ;
+    }
+
+    boolean almost_distance(int direction) {
+      // no distance indicator, just direction
+      // show direction as /\ across 3 pixels
+      byte red, blue;
+      static Changed<byte> red_changed, blue_changed;
+
+      int pix; // center pix for direction +(-1,0,1)
+      static Changed<int> pix_changed(-1);
+
+      // get us the color, ignore the pix
+      boolean calc_changed = calc_direction(direction, pix, red, blue);
+
+      // figure out the distribution /\ across the 3 pixelsf
+      float d;
+      // work in -180..180, but also need which side
+      if (direction <= 180 ) {
+        d = direction;
+      }
+      else {
+        d = direction - 360;
+      }
+      //Serial << F("dir") << direction << F(" d") << d << F(" ");
+
+      float center_pix = (NeoNumPixels - 1) / 2;
+
+      float led_center = map( d, -180.0, 180.0, center_pix + 1, center_pix - 1);
+
+      float left_most = led_center + 1;
+      float right_most = led_center - 1;
+      // center,diff from int
+      //Serial << F("c") << led_center << F(" deltac ") << (led_center - (int) led_center) << F(" ");
+
+      for (float p = center_pix - 1; p <= center_pix + 1; p++) {
+        //Serial << F(" p") << p;
+        if ( p > left_most || p < right_most) {
+          // i.e. more than 1 away from center
+          //Serial << 0 << F(" ");
+          PWM.neo.setPixelColor( (int) p, 0, 0, 0 );
+        }
+        else {
+          float diff;
+          if (p < led_center) {
+            diff =  (p - right_most);
+          }
+          else if ( p == led_center) {
+            diff = 1.0;
+          }
+          else if ( p > led_center) {
+            diff = (left_most - p);
+          }
+          float scale = diff; // - int(diff); // 0..1
+
+          int redx = red * scale;
+          if (redx == 0 && scale > 0.0) redx = 1;
+
+          int bluex = blue * scale;
+          if (bluex == 0 && scale > 0.0) bluex = 1;
+
+          //Serial << F("/d") << diff;
+          PWM.neo.setPixelColor( p, redx, 0, bluex );
+        }
+      }
+      if (direction >= (180 - 10) && direction <= (180 + 10) ) {
+        // "directly" behind
+        PWM.neo.setPixelColor( center_pixel - 1, red, 0, blue, 0 );
+        PWM.neo.setPixelColor( center_pixel + 1, red, 0, blue, 0 );
+      }
+
+      //Serial << endl;
+
+      static Changed<float> center_changed(1000);
+
+      if (
+        calc_changed
+        | center_changed( led_center )
+      ) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+    boolean single_distance(int direction) {
+      byte red, blue;
+      int pix;
+
+      boolean calc_changed = calc_direction(direction, pix, red, blue);
 
       static Changed<int> distance_brightness_changed;
       int distance_brightness = map(
@@ -209,11 +306,9 @@ class NavIndicatorV1 {
                                   0, 10000, 0, max_white
                                 );
       //Serial << distance_brightness << F(" ") << navigation.distance() << endl;
-      
+
       if (
-        red_changed(red)
-        | blue_changed(blue)
-        | pix_changed(pix)
+        calc_changed
         | distance_brightness_changed(distance_brightness)
       ) {
         //Serial << F("D ") << navigation.distance() << F(" ") << distance_brightness << endl;
@@ -224,6 +319,7 @@ class NavIndicatorV1 {
           ;
         PWM.neo.fill(db, center_pixel - 1, 3 );
         if (direction >= (180 - 10) && direction <= (180 + 10) ) {
+          // "directly" behind
           PWM.neo.setPixelColor( center_pixel - 1, red, 0, blue, 0 );
           PWM.neo.setPixelColor( center_pixel + 1, red, 0, blue, 0 );
         }

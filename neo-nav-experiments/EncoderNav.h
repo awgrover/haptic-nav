@@ -3,13 +3,14 @@
 #include <Encoder.h>
 
 #include "Navigation.h"
+#include "Changed.h"
 
 class EncoderNav {
     /*
       Use the encoder to make distance_mode().
     */
   public:
-    Encoder encoder = Encoder(2, 3); // pins
+    Encoder encoder = Encoder(2, 3); // pins w/interrupts
 
     boolean begin() {
       static boolean done = false;
@@ -38,14 +39,13 @@ class EncoderNav {
     }
 
     void plot_encoder_raw() {
-      static long last = -32000;
+      static Changed<long> changed(-32000);
       static Every heartbeat(1000);
 
       long value = distance_mode(); // encoder.read();
 
-      if ( value != last ) {
+      if ( changed(value) ) {
         Serial << value << endl;
-        last = value;
       }
       else if ( heartbeat() ) {
         Serial << value << endl;

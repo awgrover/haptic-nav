@@ -52,7 +52,7 @@ void setup() {
     }
   }
 
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(LED_BUILTIN, LOW); // heartbeat starts low
 
   Serial << F("Ready in ") << (millis() - start) << endl << endl;
 }
