@@ -19,6 +19,9 @@ class Navigation {
     virtual void update() = 0; // stuff that is periodic
     virtual int distance() = 0; // abs meters
     virtual int direction() = 0; // degrees
+    virtual int orientation() = 0; // degrees
+    virtual int street_orientation() = 0; // "abs" degrees 0..180
+    virtual boolean street_side() = 0; // if street is +x axis, true is +y dir
     virtual int turn_distance() = 0;
     virtual int turn_direction() = 0; // -1 | 0 | 1 // refine for angle of turn.
     virtual DistanceMode distance_mode() = 0; // see enum

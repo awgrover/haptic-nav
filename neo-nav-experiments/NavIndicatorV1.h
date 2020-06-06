@@ -10,7 +10,7 @@
 class NavIndicatorV1 {
 
     /*
-      3 modes
+      4 modes
         Far (>1 turn)
         Near 1 turn
         Almost no turns (may need far if long distance >20m....)
@@ -157,9 +157,23 @@ class NavIndicatorV1 {
           break;
 
         case Navigation::D_HERE : // w/in gps discrimination ~ 3m
+          // in this mode, we point at which side of the street
+          // because resolution is too low to know our relative position
+          // (and thus direction).
+          // You need to know: destination-side-of-street, street-orientation, our-orientation
           //constexpr int gps_resolution = 10; // can't actually tell below that
-          return this->blink();
+          return here_distance(
+                   navigation.orientation(), // degrees
+                   navigation.street_orientation(),
+                   navigation.street_side()
+                 );
           break;
+
+        // FIXME:
+        // uh, using direction wrong, I think.
+        // need to factor the bike orientation for the display
+        // kinda like I do for "here"
+
         case Navigation::D_AHEAD : // 0-turns && < 20m (1 block)
           return near_distance( navigation.direction(), navigation.distance() );
           break;
@@ -213,10 +227,38 @@ class NavIndicatorV1 {
              ;
     }
 
+    boolean here_distance(int orientation, int street_orientation, boolean street_side) {
+      // compare our compass orientation
+      // to the street compass orientation (only 0..180, as if "abs")
+      // then, using the street as +x axis street_side true is +y side, else -y side
+
+      // The destination-direction is the street-orientation +- 90 degrees (side)
+      int street_side_direction = street_orientation + (street_side ? -90 : +90);
+      // can't go > 360 (0..180 +90)
+      // but force > 0 (0..360)
+      if (street_side_direction < 0) street_side_direction += 360;
+
+      // what direction (rotation) is that from us?
+      // we 0, side =270
+      int rotation = street_side_direction - orientation;
+      if (rotation < 0) rotation += 360;
+
+      // us street street_side_direction rotation
+      //Serial << orientation << F(" ") << street_orientation << F(" ") 
+      //  <<  street_side_direction << F(" ") << rotation << endl;
+        
+      // now just do a 3(x2) wide direction indicator
+      boolean changed = n_wide_direction(3, rotation);
+      return changed;
+
+    }
+
     boolean near_distance(int direction, int distance) {
       // almost full width, use outside for distance
 
       boolean changed = false;
+
+      // distance indicator (2 outside leds)
       byte d_value = constrain( map(distance, 0, 100, 0, max_white), 0, max_white);
 
       static Changed<byte> changed_d_v(-1);
@@ -226,8 +268,15 @@ class NavIndicatorV1 {
         changed = true;
       }
 
-      // direction
-      const int width = 2; // actually width = 2x + 1
+      // direction on center 5 leds
+      changed = changed | n_wide_direction(2, direction);
+
+      return changed;
+    }
+
+    boolean n_wide_direction(int width, int direction) {
+      // actually width = 2x + 1:
+      // "centered with N on either side"
 
       byte red, blue;
       int pix; // ignored
@@ -244,11 +293,12 @@ class NavIndicatorV1 {
       }
       //Serial << F("dir") << direction << F(" d") << d << F(" ");
 
-      int pix_start = 1;
-      int pix_end = NeoNumPixels - 2;
-      
+      int pix_unused = NeoNumPixels - (width * 2 + 1);
+      int pix_start = 0 + pix_unused - 1; // 0 based, so -1
+      int pix_end = NeoNumPixels - pix_unused; // from count based, so just -
+
       static Changed<float> led_center_changed;
-      float led_center = map( d, -180.0, 180.0, (float)pix_end+1, (float)pix_start-1 );
+      float led_center = map( d, -180.0, 180.0, (float)pix_end + 1, (float)pix_start - 1 );
 
       if (led_center_changed( led_center )) {
         float left_most = led_center - width;
@@ -286,12 +336,12 @@ class NavIndicatorV1 {
           PWM.neo.setPixelColor( pix_start, red, 0, blue, 0 );
           PWM.neo.setPixelColor( pix_end, red, 0, blue, 0 );
         }
-        changed |= true;
+        return true;
       }
 
       //Serial << endl;
 
-      return changed;
+      return false;
     }
 
     boolean almost_distance(int direction) {

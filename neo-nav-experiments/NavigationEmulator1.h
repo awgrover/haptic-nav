@@ -98,6 +98,29 @@ class NavigationEmulator1 : public Navigation {
       }
     }
 
+    int street_orientation() {
+      // 0..180, abs orientation "n/s" etc
+      // as if street is +x axis
+      int p = pot_nav.direction();
+      return p > 180 ? p - 180 : p;
+    }
+    
+    int orientation() {
+      // absolute earth orientation, N=0degrees
+      // we only need "compass" dimension
+      // fake with tilt
+      float x = mma_nav.smooth_x(); // about -2.0 .. 2.0
+      int v = constrain( map( x, -2.0,2.0, 180.0, -180.0 ), -180.0, 180.0 );
+      if ( v < 0 ) v = 360 + v; // 0..360
+      return v;
+    }
+    
+    boolean street_side() {
+      // fake with direction
+      // for street as +x axis aligned, true is +y sides
+      return true;
+    }
+    
     int direction() {
       return pot_nav.direction();  // degrees
     }

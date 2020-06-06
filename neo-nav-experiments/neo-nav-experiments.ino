@@ -54,6 +54,9 @@ void setup() {
 
   digitalWrite(LED_BUILTIN, LOW); // heartbeat starts low
 
+  // Initial setting
+  navigation.encoder_nav.encoder.write( Navigation::D_FAR * 4 );
+  
   Serial << F("Ready in ") << (millis() - start) << endl << endl;
 }
 
